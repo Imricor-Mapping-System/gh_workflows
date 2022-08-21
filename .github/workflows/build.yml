@@ -1,0 +1,51 @@
+name: Build service
+
+on:
+  workflow_call:
+    inputs:
+      username:
+        required: true
+        type: string
+      service:
+        required: true
+        type: string
+    secrets:
+      pat:
+        required: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: self-hosted
+    steps:
+      timeout-minutes: 1
+      
+      - name: Extend Path
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Clean up
+        run: |
+          podman unshare rm -rf maestro/services/postgres-service/mount
+
+      - name: Checkout maestro
+        uses: actions/checkout@v3
+        with:
+          repository: Imricor-Mapping-System/maestro
+          ref: main
+          path: maestro
+          token: ${{ secrets.pat }}
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          path: maestro/services/${{ inputs.service }}-service
+
+      - name: Build
+        working-directory: maestro/services/${{ inputs.service }}-service
+        run: make build
+
+      - name: Push
+        run: podman push
+          --creds ${{ inputs.username }}:${{ secrets.pat }}
+          localhost/${{ inputs.service }}:latest
+          ghcr.io/imricor-mapping-system/${{ inputs.service }}:main
