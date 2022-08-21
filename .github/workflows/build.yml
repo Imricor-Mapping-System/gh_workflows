@@ -17,9 +17,8 @@ jobs:
   build:
     name: Build
     runs-on: self-hosted
+    
     steps:
-      timeout-minutes: 1
-      
       - name: Extend Path
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
